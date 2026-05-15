@@ -1,9 +1,8 @@
-import { getLanguageLabel } from '../common/constants/language-labels';
+import { Language, Languages } from '../common/languages';
 import { ProductDto } from '../common/dto/product.dto';
-import { Languages } from '../common/enums/languages.enum';
 
-export function buildReviewPrompt(product: ProductDto, language: Languages): string {
-  const languageLabel = getLanguageLabel(language);
+export function buildReviewPrompt(product: ProductDto, language: Language): string {
+  const languageLabel = Languages[language];
 
   return `
 You are a product reviewer.

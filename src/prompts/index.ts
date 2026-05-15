@@ -1,9 +1,9 @@
-import { Languages } from '../common/enums/languages.enum';
+import { Language } from '../common/languages';
 import { ProductDto } from '../common/dto/product.dto';
 import { buildBlogPrompt } from './blog.prompt';
 import { buildReviewPrompt } from './review.prompt';
 
-export type PromptBuilder = (product: ProductDto, language: Languages) => string;
+export type PromptBuilder = (product: ProductDto, language: Language) => string;
 
 export const PROMPTS: Record<string, PromptBuilder> = {
   review: buildReviewPrompt,

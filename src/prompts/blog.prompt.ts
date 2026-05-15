@@ -1,9 +1,8 @@
-import { getLanguageLabel } from '../common/constants/language-labels';
+import { Language, Languages } from '../common/languages';
 import { ProductDto } from '../common/dto/product.dto';
-import { Languages } from '../common/enums/languages.enum';
 
-export function buildBlogPrompt(product: ProductDto, language: Languages): string {
-  const languageLabel = getLanguageLabel(language);
+export function buildBlogPrompt(product: ProductDto, language: Language): string {
+  const languageLabel = Languages[language];
 
   return `
 You are a professional product review blogger and content creator.
