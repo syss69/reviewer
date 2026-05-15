@@ -1,9 +1,11 @@
-import { Injectable } from "@nestjs/common";
-import { chromium } from "playwright";
+import { Injectable } from '@nestjs/common';
+import { chromium } from 'playwright';
+import { ProductDto } from '../common/dto/product.dto';
+import { ProductParser } from '../common/interfaces/product-parser.interface';
 
 @Injectable()
-export class AmazonGlobalParser {
-  async parse(url: string) {
+export class AmazonGlobalParser implements ProductParser {
+  async parse(url: string): Promise<ProductDto> {
     const browser = await chromium.launch();
     const context = await browser.newContext({
       locale: 'en-US',
@@ -14,20 +16,20 @@ export class AmazonGlobalParser {
     });
     const page = await context.newPage();
     await page.goto(url, { waitUntil: 'domcontentloaded' });
-    const titleContainer = page.locator('#titleSection') 
+    const titleContainer = page.locator('#titleSection');
     const title = (await titleContainer.locator('#productTitle').textContent())?.trim();
     const priceContainer = page.locator('#corePriceDisplay_desktop_feature_div');
     const wholePrice = await priceContainer.locator('.a-price-whole').first().textContent();
     const fractionPrice = await priceContainer.locator('.a-price-fraction').first().textContent();
     const symbolPrice = await priceContainer.locator('.a-price-symbol').first().textContent();
-    if(!wholePrice || !fractionPrice) throw new Error('Price not found');
+    if (!wholePrice || !fractionPrice) throw new Error('Price not found');
     const price = `${symbolPrice?.trim() ?? ''}${wholePrice?.trim() ?? '0'}${fractionPrice?.trim() ?? '00'}`;
     const description = await page.locator('#feature-bullets').textContent();
     await browser.close();
     return {
-      title,
+      title: title ?? '',
       price,
-      description,
+      description: description?.trim() ?? '',
     };
   }
 }
