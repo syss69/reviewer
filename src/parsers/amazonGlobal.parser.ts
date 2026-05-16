@@ -1,35 +1,56 @@
 import { Injectable } from '@nestjs/common';
-import { chromium } from 'playwright';
 import { ProductDto } from '../common/dto/product.dto';
 import { ProductParser } from '../common/interfaces/product-parser.interface';
+import { PlaywrightBrowserService } from '../playwright/playwright-browser.service';
+
+const AMAZON_DESKTOP_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+const NAV_TIMEOUT_MS = 60_000;
+const CONTENT_TIMEOUT_MS = 60_000;
 
 @Injectable()
 export class AmazonGlobalParser implements ProductParser {
+  constructor(private readonly playwrightBrowser: PlaywrightBrowserService) {}
+
   async parse(url: string): Promise<ProductDto> {
-    const browser = await chromium.launch();
+    const browser = await this.playwrightBrowser.getBrowser();
     const context = await browser.newContext({
       locale: 'en-US',
-      userAgent:
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
-        '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      userAgent: AMAZON_DESKTOP_UA,
       viewport: { width: 1440, height: 900 },
     });
-    const page = await context.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
-    const titleContainer = page.locator('#titleSection');
-    const title = (await titleContainer.locator('#productTitle').textContent())?.trim();
-    const priceContainer = page.locator('#corePriceDisplay_desktop_feature_div');
-    const wholePrice = await priceContainer.locator('.a-price-whole').first().textContent();
-    const fractionPrice = await priceContainer.locator('.a-price-fraction').first().textContent();
-    const symbolPrice = await priceContainer.locator('.a-price-symbol').first().textContent();
-    if (!wholePrice || !fractionPrice) throw new Error('Price not found');
-    const price = `${symbolPrice?.trim() ?? ''}${wholePrice?.trim() ?? '0'}${fractionPrice?.trim() ?? '00'}`;
-    const description = await page.locator('#feature-bullets').textContent();
-    await browser.close();
-    return {
-      title: title ?? '',
-      price,
-      description: description?.trim() ?? '',
-    };
+
+    try {
+      const page = await context.newPage();
+      page.setDefaultTimeout(CONTENT_TIMEOUT_MS);
+      page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS);
+
+      await page.goto(url, { waitUntil: 'load' });
+
+      // amazon.com — разметка другая, чем на .fr; не подмешиваем французские #title
+      const titleContainer = page.locator('#titleSection');
+      await titleContainer.waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
+      const titleLoc = titleContainer.locator('#productTitle');
+      await titleLoc.waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
+      const title = (await titleLoc.textContent())?.trim();
+
+      const priceContainer = page.locator('#corePriceDisplay_desktop_feature_div');
+      await priceContainer.first().waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
+      const wholePrice = await priceContainer.locator('.a-price-whole').first().textContent();
+      const fractionPrice = await priceContainer.locator('.a-price-fraction').first().textContent();
+      const symbolPrice = await priceContainer.locator('.a-price-symbol').first().textContent();
+      if (!wholePrice || !fractionPrice) throw new Error('Price not found');
+      const price = `${symbolPrice?.trim() ?? ''}${wholePrice?.trim() ?? '0'}${fractionPrice?.trim() ?? '00'}`;
+      const description = await page.locator('#feature-bullets').first().textContent();
+      return {
+        title: title ?? '',
+        price,
+        description: description?.trim() ?? '',
+      };
+    } finally {
+      await context.close();
+    }
   }
 }
