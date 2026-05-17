@@ -31,10 +31,12 @@ export class AmazonFranceParser implements ProductParser {
       const symbolPrice = await priceContainer.locator('.a-price-symbol').first().textContent();
       if (!wholePrice || !fractionPrice) throw new Error('Price not found');
       const price = `${symbolPrice?.trim() ?? ''}${wholePrice?.trim() ?? '0'}${fractionPrice?.trim() ?? '00'}`;
+      const overview = await page.locator('#poExpander').first().textContent();
       const description = await page.locator('#feature-bullets').first().textContent();
       return {
         title: title?.trim() ?? '',
         price,
+        overview: overview?.trim() ?? '',
         description: description?.trim() ?? '',
       };
     } finally {

@@ -9,6 +9,7 @@ const AMAZON_DESKTOP_UA =
 
 const NAV_TIMEOUT_MS = 60_000;
 const CONTENT_TIMEOUT_MS = 60_000;
+const OPTIONAL_BLOCK_TIMEOUT_MS = 10_000;
 
 @Injectable()
 export class AmazonGlobalParser implements ProductParser {
@@ -29,25 +30,49 @@ export class AmazonGlobalParser implements ProductParser {
 
       await page.goto(url, { waitUntil: 'load' });
 
-      // amazon.com — разметка другая, чем на .fr; не подмешиваем французские #title
-      const titleContainer = page.locator('#titleSection');
-      await titleContainer.waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
-      const titleLoc = titleContainer.locator('#productTitle');
-      await titleLoc.waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
-      const title = (await titleLoc.textContent())?.trim();
+      const optionalText = async (selector: string): Promise<string> => {
+        try {
+          const el = page.locator(selector).first();
+          await el.waitFor({ state: 'attached', timeout: OPTIONAL_BLOCK_TIMEOUT_MS });
+          return (await el.textContent())?.trim() ?? '';
+        } catch {
+          return '';
+        }
+      };
 
-      const priceContainer = page.locator('#corePriceDisplay_desktop_feature_div');
-      await priceContainer.first().waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
-      const wholePrice = await priceContainer.locator('.a-price-whole').first().textContent();
-      const fractionPrice = await priceContainer.locator('.a-price-fraction').first().textContent();
-      const symbolPrice = await priceContainer.locator('.a-price-symbol').first().textContent();
-      if (!wholePrice || !fractionPrice) throw new Error('Price not found');
-      const price = `${symbolPrice?.trim() ?? ''}${wholePrice?.trim() ?? '0'}${fractionPrice?.trim() ?? '00'}`;
-      const description = await page.locator('#feature-bullets').first().textContent();
+      const fetchTitle = async (): Promise<string> => {
+        const titleContainer = page.locator('#titleSection');
+        await titleContainer.waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
+        const titleLoc = titleContainer.locator('#productTitle');
+        await titleLoc.waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
+        return (await titleLoc.textContent())?.trim() ?? '';
+      };
+
+      const fetchPrice = async (): Promise<string> => {
+        const priceContainer = page.locator('#corePriceDisplay_desktop_feature_div');
+        await priceContainer.first().waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
+        const [wholePrice, fractionPrice, symbolPrice] = await Promise.all([
+          priceContainer.locator('.a-price-whole').first().textContent(),
+          priceContainer.locator('.a-price-fraction').first().textContent(),
+          priceContainer.locator('.a-price-symbol').first().textContent(),
+        ]);
+        if (!wholePrice || !fractionPrice) throw new Error('Price not found');
+        return `${symbolPrice?.trim() ?? ''}${wholePrice?.trim() ?? '0'}${fractionPrice?.trim() ?? '00'}`;
+      };
+
+      const [title, price, overviewFromPo, overviewFromFacts, description] = await Promise.all([
+        fetchTitle(),
+        fetchPrice(),
+        optionalText('#poExpander'),
+        optionalText('#productFactsDesktopExpander'),
+        optionalText('#feature-bullets'),
+      ]);
+
       return {
-        title: title ?? '',
+        title,
         price,
-        description: description?.trim() ?? '',
+        overview: overviewFromPo || overviewFromFacts,
+        description,
       };
     } finally {
       await context.close();
