@@ -1,5 +1,5 @@
 import { Controller , Body, Post} from '@nestjs/common';
-import { AmazonFranceParser } from '../parser/amazonFrance.parser';
+import { AmazonFranceParser } from '../parsers/amazonFrance.parser';
 
 @Controller('amazon-france')
 export class AmazonFranceController {
