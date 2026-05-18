@@ -5,6 +5,8 @@ describe('AiService', () => {
   let service: AiService;
 
   beforeEach(async () => {
+    process.env.OPENROUTER_API_KEY ??= 'test-key-for-unit-tests';
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [AiService],
     }).compile();
