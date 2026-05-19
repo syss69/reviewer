@@ -6,6 +6,7 @@ import { AmazonFranceModule } from './amazon-france/amazon-france.module';
 import { AmazonGlobalModule } from './amazon-global/amazon-global.module';
 import { AiModule } from './ai/ai.module';
 import { PlaywrightModule } from './playwright/playwright.module';
+import { AliexpressModule } from './aliexpress/aliexpress.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { PlaywrightModule } from './playwright/playwright.module';
     AmazonFranceModule,
     AmazonGlobalModule,
     AiModule,
+    AliexpressModule,
   ],
   controllers: [AppController],
   providers: [AppService],
