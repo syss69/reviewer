@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProductDto } from '../common/dto/product.dto';
 import { ProductParser } from '../common/interfaces/product-parser.interface';
 import { PlaywrightBrowserService } from '../playwright/playwright-browser.service';
@@ -7,8 +7,8 @@ const AMAZON_DESKTOP_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-const NAV_TIMEOUT_MS = 60_000;
-const CONTENT_TIMEOUT_MS = 60_000;
+const NAV_TIMEOUT_MS = 30_000;
+const CONTENT_TIMEOUT_MS = 30_000;
 const OPTIONAL_BLOCK_TIMEOUT_MS = 10_000;
 
 @Injectable()
@@ -30,16 +30,6 @@ export class AmazonGlobalParser implements ProductParser {
 
       await page.goto(url, { waitUntil: 'load' });
 
-      const optionalText = async (selector: string): Promise<string> => {
-        try {
-          const el = page.locator(selector).first();
-          await el.waitFor({ state: 'attached', timeout: OPTIONAL_BLOCK_TIMEOUT_MS });
-          return (await el.textContent())?.trim() ?? '';
-        } catch {
-          return '';
-        }
-      };
-
       const fetchTitle = async (): Promise<string> => {
         const titleContainer = page.locator('#titleSection');
         await titleContainer.waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
@@ -56,8 +46,21 @@ export class AmazonGlobalParser implements ProductParser {
           priceContainer.locator('.a-price-fraction').first().textContent(),
           priceContainer.locator('.a-price-symbol').first().textContent(),
         ]);
-        if (!wholePrice || !fractionPrice) throw new Error('Price not found');
+        if (!wholePrice || !fractionPrice) {
+          throw new NotFoundException('Amazon: price not found');
+        }
         return `${symbolPrice?.trim() ?? ''}${wholePrice?.trim() ?? '0'}${fractionPrice?.trim() ?? '00'}`;
+      };
+
+
+      const optionalText = async (selector: string): Promise<string> => {
+        try {
+          const el = page.locator(selector).first();
+          await el.waitFor({ state: 'attached', timeout: OPTIONAL_BLOCK_TIMEOUT_MS });
+          return (await el.textContent())?.trim() ?? '';
+        } catch {
+          return '';
+        }
       };
 
       const [title, price, overviewFromPo, overviewFromFacts, description] = await Promise.all([
@@ -67,6 +70,10 @@ export class AmazonGlobalParser implements ProductParser {
         optionalText('#productFactsDesktopExpander'),
         optionalText('#feature-bullets'),
       ]);
+
+      if (!title) {
+        throw new NotFoundException('Amazon: product title not found');
+      }
 
       return {
         title,
