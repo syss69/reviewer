@@ -7,6 +7,7 @@ import { AmazonGlobalModule } from './amazon-global/amazon-global.module';
 import { AiModule } from './ai/ai.module';
 import { PlaywrightModule } from './playwright/playwright.module';
 import { AliexpressModule } from './aliexpress/aliexpress.module';
+import { WildberriesModule } from './wildberries/wildberries.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AliexpressModule } from './aliexpress/aliexpress.module';
     AmazonGlobalModule,
     AiModule,
     AliexpressModule,
+    WildberriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

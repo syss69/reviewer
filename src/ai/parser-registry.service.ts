@@ -4,6 +4,7 @@ import { ProductParser } from '../common/interfaces/product-parser.interface';
 import { AmazonFranceParser } from '../parsers/amazonFrance.parser';
 import { AmazonGlobalParser } from '../parsers/amazonGlobal.parser';
 import { AliExpressParser } from '../parsers/aliexpress.parser';
+import { WildberriesParser } from '../parsers/wildberries.parser';
 
 @Injectable()
 export class ParserRegistryService {
@@ -11,6 +12,7 @@ export class ParserRegistryService {
     private readonly amazonFranceParser: AmazonFranceParser,
     private readonly amazonGlobalParser: AmazonGlobalParser,
     private readonly aliExpressParser: AliExpressParser,
+    private readonly wildberriesParser: WildberriesParser,
   ) {}
 
   getParser(marketplace: Marketplace): ProductParser {
@@ -21,6 +23,8 @@ export class ParserRegistryService {
         return this.amazonGlobalParser;
       case Marketplace.ALIEXPRESS:
         return this.aliExpressParser;
+      case Marketplace.WILDBERRIES:
+        return this.wildberriesParser;
       default:
         throw new BadRequestException(`Unsupported marketplace: ${marketplace}`);
     }
