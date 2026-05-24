@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProductDto } from '../common/dto/product.dto';
 import { ProductParser } from '../common/interfaces/product-parser.interface';
 
@@ -49,12 +49,12 @@ export class WildberriesParser implements ProductParser {
 
     const detail = await fetchJson<WbDetailResponse>(detailUrl.toString());
     if (!detail) {
-      throw new Error('Wildberries: product not found');
+      throw new NotFoundException('Wildberries: product not found');
     }
 
     const product = detail.products?.[0] ?? detail.data?.products?.[0];
     if (!product?.name) {
-      throw new Error('Wildberries: product not found');
+      throw new NotFoundException('Wildberries: product not found');
     }
 
     const card = await fetchBasketCard(nmId);
@@ -99,7 +99,7 @@ async function fetchBasketCard(nmId: string): Promise<WbCardJson> {
     if (card) return card;
   }
 
-  throw new Error('Wildberries: card.json not found on basket hosts');
+  throw new NotFoundException('Wildberries: card.json not found on basket hosts');
 }
 
 function getBasketNumber(vol: number): string {
@@ -152,7 +152,7 @@ function extractNmId(input: string): string {
   try {
     parsed = new URL(trimmed);
   } catch {
-    throw new Error('Wildberries: invalid product URL');
+    throw new NotFoundException('Wildberries: invalid product URL');
   }
 
   const fromQuery = parsed.searchParams.get('nm');
@@ -161,7 +161,7 @@ function extractNmId(input: string): string {
   const fromPath = parsed.pathname.match(/\/catalog\/(\d+)/);
   if (fromPath) return fromPath[1];
 
-  throw new Error('Wildberries: could not extract product id (nm) from URL');
+  throw new NotFoundException('Wildberries: could not extract product id (nm) from URL');
 }
 
 type FetchJsonOptions = { notFoundOk?: boolean };
@@ -208,7 +208,7 @@ async function fetchJson<T>(
       'code' in err &&
       (err as NodeJS.ErrnoException).code === 'ENOENT'
     ) {
-      throw new Error('Wildberries: curl not found in PATH');
+      throw new NotFoundException('Wildberries: curl not found in PATH');
     }
 
     const stderr =

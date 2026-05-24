@@ -1,15 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Page, Response } from 'playwright';
 import { ProductDto } from '../common/dto/product.dto';
 import { ProductParser } from '../common/interfaces/product-parser.interface';
 import { PlaywrightBrowserService } from '../playwright/playwright-browser.service';
 
+
 const ALIEXPRESS_DESKTOP_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-const NAV_TIMEOUT_MS = 60_000;
-const PDP_API_TIMEOUT_MS = 45_000;
+const NAV_TIMEOUT_MS = 30_000;
+const PDP_API_TIMEOUT_MS = 30_000;
 
 type AliExpressPdpResult = Record<string, unknown> & {
   PRODUCT_TITLE?: { text?: string };
@@ -50,7 +51,9 @@ export class AliExpressParser implements ProductParser {
       const price = result.PRICE?.targetSkuPriceInfo?.salePriceString?.trim() ?? '';
 
       if (!title) {
-        throw new Error('AliExpress: product title not found in PDP API response');
+        throw new NotFoundException(
+          'AliExpress: product title not found in PDP API response',
+        );
       }
 
       const overview = extractSpecifications(result);
@@ -74,7 +77,7 @@ function waitForPdpResult(page: Page, timeoutMs: number): Promise<AliExpressPdpR
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       page.off('response', onResponse);
-      reject(new Error('AliExpress: PDP API timeout'));
+      reject(new NotFoundException('AliExpress: PDP API timeout'));
     }, timeoutMs);
 
     const onResponse = async (response: Response) => {

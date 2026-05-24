@@ -12,7 +12,7 @@ ${product.title}
 
 Price:
 ${product.price}
-
+${product.overview ? `\nCharacteristics:\n${product.overview}\n` : ''}
 Description:
 ${product.description}
 
