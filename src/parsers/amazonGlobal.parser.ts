@@ -32,15 +32,25 @@ export class AmazonGlobalParser implements ProductParser {
 
       const fetchTitle = async (): Promise<string> => {
         const titleContainer = page.locator('#titleSection');
-        await titleContainer.waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
+        await titleContainer.waitFor({
+          state: 'attached',
+          timeout: CONTENT_TIMEOUT_MS,
+        });
         const titleLoc = titleContainer.locator('#productTitle');
-        await titleLoc.waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
+        await titleLoc.waitFor({
+          state: 'attached',
+          timeout: CONTENT_TIMEOUT_MS,
+        });
         return (await titleLoc.textContent())?.trim() ?? '';
       };
 
       const fetchPrice = async (): Promise<string> => {
-        const priceContainer = page.locator('#corePriceDisplay_desktop_feature_div');
-        await priceContainer.first().waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
+        const priceContainer = page.locator(
+          '#corePriceDisplay_desktop_feature_div',
+        );
+        await priceContainer
+          .first()
+          .waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT_MS });
         const [wholePrice, fractionPrice, symbolPrice] = await Promise.all([
           priceContainer.locator('.a-price-whole').first().textContent(),
           priceContainer.locator('.a-price-fraction').first().textContent(),
@@ -52,24 +62,27 @@ export class AmazonGlobalParser implements ProductParser {
         return `${symbolPrice?.trim() ?? ''}${wholePrice?.trim() ?? '0'}${fractionPrice?.trim() ?? '00'}`;
       };
 
-
       const optionalText = async (selector: string): Promise<string> => {
         try {
           const el = page.locator(selector).first();
-          await el.waitFor({ state: 'attached', timeout: OPTIONAL_BLOCK_TIMEOUT_MS });
+          await el.waitFor({
+            state: 'attached',
+            timeout: OPTIONAL_BLOCK_TIMEOUT_MS,
+          });
           return (await el.textContent())?.trim() ?? '';
         } catch {
           return '';
         }
       };
 
-      const [title, price, overviewFromPo, overviewFromFacts, description] = await Promise.all([
-        fetchTitle(),
-        fetchPrice(),
-        optionalText('#poExpander'),
-        optionalText('#productFactsDesktopExpander'),
-        optionalText('#feature-bullets'),
-      ]);
+      const [title, price, overviewFromPo, overviewFromFacts, description] =
+        await Promise.all([
+          fetchTitle(),
+          fetchPrice(),
+          optionalText('#poExpander'),
+          optionalText('#productFactsDesktopExpander'),
+          optionalText('#feature-bullets'),
+        ]);
 
       if (!title) {
         throw new NotFoundException('Amazon: product title not found');

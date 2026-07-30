@@ -8,7 +8,9 @@ describe('AiController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AiController],
-      providers: [{ provide: ReviewService, useValue: { generateFromUrl: jest.fn() } }],
+      providers: [
+        { provide: ReviewService, useValue: { generateFromUrl: jest.fn() } },
+      ],
     }).compile();
 
     controller = module.get<AiController>(AiController);

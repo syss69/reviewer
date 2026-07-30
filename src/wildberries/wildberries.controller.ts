@@ -3,12 +3,10 @@ import { WildberriesParser } from '../parsers/wildberries.parser';
 
 @Controller('wildberries')
 export class WildberriesController {
-    constructor(
-        private readonly wildberriesParser: WildberriesParser
-    ) {}
+  constructor(private readonly wildberriesParser: WildberriesParser) {}
 
-    @Post()
-    async parse(@Body() body: { url: string }) {
-        return this.wildberriesParser.parse(body.url);
-    }
+  @Post()
+  async parse(@Body() body: { url: string }) {
+    return this.wildberriesParser.parse(body.url);
+  }
 }
