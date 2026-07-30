@@ -17,16 +17,16 @@ jobs:
     steps:
       - name: Pull recent changes
         run: |
-          cd back/reviewer
+          cd /home/artem/back/reviewer
           git fetch origin
           git reset --hard origin/main
       - name: Stop running containers
         run: |
-          cd back/reviewer
+          cd /home/artem/back/reviewer
           docker compose down
       - name: Build and deploy project
         run: |
-          cd back/reviewer
+          cd /home/artem/back/reviewer
           docker compose up -d --build
       - name: Cleanup
         run: docker image prune -f
