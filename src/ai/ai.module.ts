@@ -9,7 +9,12 @@ import { ParserRegistryService } from './parser-registry.service';
 import { ReviewService } from './review.service';
 
 @Module({
-  imports: [AmazonFranceModule, AmazonGlobalModule, AliexpressModule, WildberriesModule],
+  imports: [
+    AmazonFranceModule,
+    AmazonGlobalModule,
+    AliexpressModule,
+    WildberriesModule,
+  ],
   controllers: [AiController],
   providers: [AiService, ReviewService, ParserRegistryService],
 })

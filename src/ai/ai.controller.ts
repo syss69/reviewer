@@ -6,7 +6,7 @@ import { BasicReviewDto } from './dto/basic-review.dto';
 @Controller('ai')
 export class AiController {
   constructor(private readonly reviewService: ReviewService) {}
-
+//test
   @Post()
   async generateReview(@Body() body: GenerateReviewDto) {
     return this.reviewService.generateFromUrl(body);

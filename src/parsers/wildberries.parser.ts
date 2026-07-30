@@ -99,7 +99,9 @@ async function fetchBasketCard(nmId: string): Promise<WbCardJson> {
     if (card) return card;
   }
 
-  throw new NotFoundException('Wildberries: card.json not found on basket hosts');
+  throw new NotFoundException(
+    'Wildberries: card.json not found on basket hosts',
+  );
 }
 
 function getBasketNumber(vol: number): string {
@@ -161,7 +163,9 @@ function extractNmId(input: string): string {
   const fromPath = parsed.pathname.match(/\/catalog\/(\d+)/);
   if (fromPath) return fromPath[1];
 
-  throw new NotFoundException('Wildberries: could not extract product id (nm) from URL');
+  throw new NotFoundException(
+    'Wildberries: could not extract product id (nm) from URL',
+  );
 }
 
 type FetchJsonOptions = { notFoundOk?: boolean };

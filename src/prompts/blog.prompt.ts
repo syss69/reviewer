@@ -1,7 +1,10 @@
 import { Language, Languages } from '../common/languages';
 import { ProductDto } from '../common/dto/product.dto';
 
-export function buildBlogPrompt(product: ProductDto, language: Language): string {
+export function buildBlogPrompt(
+  product: ProductDto,
+  language: Language,
+): string {
   const languageLabel = Languages[language];
 
   return `

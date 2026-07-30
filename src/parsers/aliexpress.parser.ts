@@ -4,7 +4,6 @@ import { ProductDto } from '../common/dto/product.dto';
 import { ProductParser } from '../common/interfaces/product-parser.interface';
 import { PlaywrightBrowserService } from '../playwright/playwright-browser.service';
 
-
 const ALIEXPRESS_DESKTOP_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
@@ -35,7 +34,10 @@ export class AliExpressParser implements ProductParser {
       page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS);
 
       const pdpPromise = waitForPdpResult(page, PDP_API_TIMEOUT_MS);
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
+      await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: NAV_TIMEOUT_MS,
+      });
 
       let result: AliExpressPdpResult;
       try {
@@ -43,12 +45,16 @@ export class AliExpressParser implements ProductParser {
       } catch {
         await page.waitForTimeout(3000);
         const retryPromise = waitForPdpResult(page, PDP_API_TIMEOUT_MS);
-        await page.reload({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
+        await page.reload({
+          waitUntil: 'domcontentloaded',
+          timeout: NAV_TIMEOUT_MS,
+        });
         result = await retryPromise;
       }
 
       const title = result.PRODUCT_TITLE?.text?.trim() ?? '';
-      const price = result.PRICE?.targetSkuPriceInfo?.salePriceString?.trim() ?? '';
+      const price =
+        result.PRICE?.targetSkuPriceInfo?.salePriceString?.trim() ?? '';
 
       if (!title) {
         throw new NotFoundException(
@@ -57,7 +63,10 @@ export class AliExpressParser implements ProductParser {
       }
 
       const overview = extractSpecifications(result);
-      const descriptionFromUrl = await fetchNativeDescription(page, result.DESC?.nativeDescUrl);
+      const descriptionFromUrl = await fetchNativeDescription(
+        page,
+        result.DESC?.nativeDescUrl,
+      );
       // Промпты читают description — если длинного описания нет, отдаём характеристики
       const description = descriptionFromUrl || overview;
 
@@ -73,7 +82,10 @@ export class AliExpressParser implements ProductParser {
   }
 }
 
-function waitForPdpResult(page: Page, timeoutMs: number): Promise<AliExpressPdpResult> {
+function waitForPdpResult(
+  page: Page,
+  timeoutMs: number,
+): Promise<AliExpressPdpResult> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       page.off('response', onResponse);
@@ -87,8 +99,13 @@ function waitForPdpResult(page: Page, timeoutMs: number): Promise<AliExpressPdpR
         const text = await response.text();
         if (text.includes('FAIL_SYS_TOKEN')) return;
 
-        const jsonStr = text.trim().replace(/^mtopjsonp\d+\(/, '').replace(/\);?$/, '');
-        const payload = JSON.parse(jsonStr) as { data?: { result?: AliExpressPdpResult } };
+        const jsonStr = text
+          .trim()
+          .replace(/^mtopjsonp\d+\(/, '')
+          .replace(/\);?$/, '');
+        const payload = JSON.parse(jsonStr) as {
+          data?: { result?: AliExpressPdpResult };
+        };
         const result = payload?.data?.result;
 
         if (!result?.PRODUCT_TITLE?.text) return;
@@ -168,7 +185,10 @@ function firstString(...values: unknown[]): string | null {
   return null;
 }
 
-async function fetchNativeDescription(page: Page, descUrl?: string): Promise<string> {
+async function fetchNativeDescription(
+  page: Page,
+  descUrl?: string,
+): Promise<string> {
   if (!descUrl) return '';
 
   try {
@@ -196,7 +216,8 @@ function formatNativeDescription(data: unknown): string {
   const o = data as Record<string, unknown>;
   const parts: string[] = [];
 
-  if (typeof o.pcDescContent === 'string') parts.push(stripHtml(o.pcDescContent));
+  if (typeof o.pcDescContent === 'string')
+    parts.push(stripHtml(o.pcDescContent));
   if (typeof o.description === 'string') parts.push(stripHtml(o.description));
   if (typeof o.content === 'string') parts.push(stripHtml(o.content));
   if (typeof o.mobileDetail === 'string') parts.push(stripHtml(o.mobileDetail));
@@ -217,5 +238,8 @@ function formatNativeDescription(data: unknown): string {
 }
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }

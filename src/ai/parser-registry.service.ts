@@ -25,8 +25,12 @@ export class ParserRegistryService {
         return this.aliExpressParser;
       case Marketplace.WILDBERRIES:
         return this.wildberriesParser;
-      default:
-        throw new BadRequestException(`Unsupported marketplace: ${marketplace}`);
+      default: {
+        const unsupported: never = marketplace;
+        throw new BadRequestException(
+          `Unsupported marketplace: ${String(unsupported)}`,
+        );
+      }
     }
   }
 }
